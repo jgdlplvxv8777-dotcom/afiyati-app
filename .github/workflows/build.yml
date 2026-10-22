@@ -1,0 +1,59 @@
+name: Build APK
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - run: npm install -g @bubblewrap/cli
+      - name: Configure
+        run: |
+          mkdir -p ~/.bubblewrap
+          echo "{\"jdkPath\":\"$JAVA_HOME\",\"androidSdkPath\":\"$ANDROID_HOME\"}" > ~/.bubblewrap/config.json
+      - name: Build
+        run: |
+          mkdir app && cd app
+          keytool -genkeypair -keystore android.keystore -alias afiyati -keyalg RSA -keysize 2048 -validity 10000 -storepass afiyati123456 -keypass afiyati123456 -dname "CN=Afiyati, O=Afiyati, C=SA"
+          cat > twa-manifest.json <<'EOF'
+          {
+            "packageId": "studio.ai.service_55120.twa",
+            "host": "service-55120.ai.studio",
+            "name": "عافيتي",
+            "launcherName": "عافيتي",
+            "display": "standalone",
+            "themeColor": "#047857",
+            "themeColorDark": "#047857",
+            "navigationColor": "#047857",
+            "navigationColorDark": "#047857",
+            "navigationDividerColor": "#047857",
+            "navigationDividerColorDark": "#047857",
+            "backgroundColor": "#047857",
+            "enableNotifications": false,
+            "startUrl": "/",
+            "iconUrl": "https://service-55120.ai.studio/pwa-512x512.png",
+            "appVersionName": "1.0.0",
+            "appVersionCode": 1,
+            "orientation": "default",
+            "fallbackType": "customtabs",
+            "splashScreenFadeOutDuration": 300,
+            "signingKey": { "path": "./android.keystore", "alias": "afiyati" },
+            "shortcuts": [],
+            "additionalTrustedOrigins": []
+          }
+          EOF
+          export BUBBLEWRAP_KEYSTORE_PASSWORD=afiyati123456
+          export BUBBLEWRAP_KEY_PASSWORD=afiyati123456
+          bubblewrap update --skipVersionUpgrade
+          bubblewrap build --skipPwaValidation
+      - uses: actions/upload-artifact@v4
+        with:
+          name: afiyati-apk
+          path: |
+            app/*.apk
+            app/android.keystore

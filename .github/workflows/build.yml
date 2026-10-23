@@ -19,9 +19,7 @@ jobs:
           $SDK/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0" "platforms;android-34"
           mkdir -p ~/.bubblewrap
           echo "{\"jdkPath\":\"$JAVA_HOME\",\"androidSdkPath\":\"$SDK\"}" > ~/.bubblewrap/config.json
-          cat ~/.bubblewrap/config.json
-          ls $SDK
-      - name: Build
+      - name: Generate project
         run: |
           mkdir app && cd app
           keytool -genkeypair -keystore android.keystore -alias afiyati -keyalg RSA -keysize 2048 -validity 10000 -storepass afiyati123456 -keypass afiyati123456 -dname "CN=Afiyati, O=Afiyati, C=SA"
@@ -55,10 +53,18 @@ jobs:
           export BUBBLEWRAP_KEYSTORE_PASSWORD=afiyati123456
           export BUBBLEWRAP_KEY_PASSWORD=afiyati123456
           bubblewrap update --skipVersionUpgrade
-          bubblewrap build --skipPwaValidation
+      - name: Build with Gradle
+        run: |
+          cd app
+          export ANDROID_HOME=/usr/local/lib/android/sdk
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+          $ANDROID_HOME/build-tools/34.0.0/zipalign -v -p 4 app/build/outputs/apk/release/app-release-unsigned.apk aligned.apk
+          $ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks android.keystore --ks-key-alias afiyati --ks-pass pass:afiyati123456 --key-pass pass:afiyati123456 --out afiyati-signed.apk aligned.apk
       - uses: actions/upload-artifact@v4
         with:
           name: afiyati-apk
           path: |
-            app/*.apk
+            app/afiyati-signed.apk
             app/android.keystore

@@ -11,11 +11,15 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+      - uses: android-actions/setup-android@v3
       - run: npm install -g @bubblewrap/cli
       - name: Configure
         run: |
+          sdkmanager "build-tools;34.0.0" "platforms;android-34"
           mkdir -p ~/.bubblewrap
           echo "{\"jdkPath\":\"$JAVA_HOME\",\"androidSdkPath\":\"$ANDROID_HOME\"}" > ~/.bubblewrap/config.json
+          cat ~/.bubblewrap/config.json
+          ls $ANDROID_HOME
       - name: Build
         run: |
           mkdir app && cd app

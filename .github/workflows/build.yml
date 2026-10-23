@@ -58,6 +58,9 @@ jobs:
           cd app
           export ANDROID_HOME=/usr/local/lib/android/sdk
           echo "sdk.dir=$ANDROID_HOME" > local.properties
+          grep -rl "minSdk" --include=build.gradle --include=build.gradle.kts . || true
+          sed -i -E 's/minSdk(Version)?[ =]+[0-9]+/minSdk 24/' app/build.gradle || true
+          grep -n "minSdk" app/build.gradle || true
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon
           $ANDROID_HOME/build-tools/34.0.0/zipalign -v -p 4 app/build/outputs/apk/release/app-release-unsigned.apk aligned.apk
